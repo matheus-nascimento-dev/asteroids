@@ -1,37 +1,60 @@
-# this allows us to use code from
-# the open-source pygame library
-# throughout this file
 import pygame
 from constants import *
-from player import *
-from circleshape import *
+from player import Player
+from asteroid import Asteroid
+from asteroidfield import AsteroidField
+from shot import Shot
+import sys
+
 
 def main():
     pygame.init()
-
-    updatables = pygame.sprite.Group()
-    drawables = pygame.sprite.Group()
-    Player.containers = (updatables, drawables)
-    clock = pygame.time.Clock()
-    dt = 0 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    loop = True
-    player = Player(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
+    clock = pygame.time.Clock()
 
-    while loop == True:
+    updatable = pygame.sprite.Group()
+    drawable = pygame.sprite.Group()
+    asteroids = pygame.sprite.Group()
+    shots = pygame.sprite.Group()
+
+    Player.containers = (updatable, drawable)
+    Asteroid.containers = (asteroids, updatable, drawable)
+    AsteroidField.containers = updatable
+    Shot.containers = (shots, updatable, drawable)
+
+    player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+    asteroidField = AsteroidField()
+
+    dt = 0
+
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
-        updatables.update(dt)
-        pygame.Surface.fill(screen, (0,0,0))
-        drawables.draw(screen)
-        pygame.display.update()
-        clock.tick(60)
-        dt = clock.tick(60)/1000
 
-    print("Starting Asteroids!")
-    print(f"Screen width: {SCREEN_WIDTH}")
-    print(f"Screen height: {SCREEN_HEIGHT}")
+        updatable.update(dt)
+
+        for asteroid in asteroids:
+            if player.colliding(asteroid):
+                print("Game over!")
+                sys.exit()
+
+        for asteroid in asteroids:
+            for bullet in shots:
+                if bullet.colliding(asteroid):
+                    asteroid.split()
+                    pygame.sprite.Sprite.kill(bullet)
+
+        screen.fill("black")
+
+        for obj in drawable:
+            obj.draw(screen)
+
+        pygame.display.flip()
+
+        # limit the framerate to 60 FPS
+        dt = clock.tick(60) / 1000
+
 
 if __name__ == "__main__":
     main()
